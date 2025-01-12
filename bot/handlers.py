@@ -1,6 +1,7 @@
 from telebot import TeleBot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 from .database import get_db_connection
+from bot import bot # Ensure bot instance is imported
 
 # Import bot instance from __init__.py
 from . import bot
@@ -57,3 +58,9 @@ def validate_email(email):
     import re
     email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(email_regex, email) is not None
+
+# Debug messages to check what the bot is receiving
+@bot.message_handler(func=lambda message: True)
+def echo_all(message):
+    print(f"Received message: {message.text}")
+    bot.reply_to(message, "I see your message!")
