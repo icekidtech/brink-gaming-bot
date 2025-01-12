@@ -42,3 +42,21 @@ def initialize_db():
             print(f"Error initializing database: {e}")
         finally:
             connection.close()
+                       
+initialize_db()           
+            
+def add_user(email, hashed_passcode, telegram_username, country):
+    query = """
+    INSERT INTO users (email, passcode, telegram_username, country)
+    VALUES (%s, %s, %s, %s)
+    ON CONFLICT (email) DO NOTHING;
+    """
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute(query, (email, hashed_passcode, telegram_username, country))
+        conn.commit()
+    except Exception as e:
+        print(f"Error adding user: {e}")
+    finally:
+        conn.close()
