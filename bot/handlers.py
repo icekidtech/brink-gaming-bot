@@ -59,6 +59,55 @@ def validate_email(email):
     email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(email_regex, email) is not None
 
+@bot.message_handler(func=lambda msg: msg.text == "Login")
+def login(message):
+    bot.send_message(message.chat.id, "Please enter your email:")
+    bot.register_next_step_handler(message, verify_login)
+    
+def verify_login(message):
+    email = message.text
+    # Query the database to check if the email exists
+    from bot.database import fetch_user_by_email
+    user = fetch_user_by_email(email)
+    
+    if user:
+        bot.send_message(message.chat.id, "Enter your passcode:")
+        bot.register_next_step_handler(message, verify_passcode, email)
+    else:
+        bot.send_message(message.chat.id, "Email not found. Please register first.")
+        
+def verify_passcode(message, email):
+    passcode = message.text
+    # Query the database to check if the passcode matches
+    from bot.database import fetch_user_by_email
+    user = fetch_user_by_email(email)
+    
+    if user and user['passcode'] == passcode:
+        # Successful login
+        bot.send_message(message.chat.id, "Login successful! Redirecting to your dashboard...")
+        show_dashboard(message, user)
+    else:
+        bot.send_message(message.chat.id, "Incorrect passcode. Please try again.")
+        
+def show_dashboard(message, user):
+    # Assuming `user` is a dictionary with user's info
+    username = message.from_user.username or "User"
+    dashboard_text = f"""
+    Welcome back, {username}! 🎉
+    Your current status:
+
+    🎖️ Title: {user.get('title', 'New User')}
+    ♟️ Leaderboard Position: {user.get('leaderboard_position', '000th')}
+    #⃣ Total Post Submissions: {user.get('total_submissions', 0)}
+    🗺️ Region of Activity: {user.get('country', 'Unknown')}
+
+    What would you like to do next?
+    """
+    # Create options for the dashboard
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(KeyboardButton("Join Pool"), KeyboardButton("Submit Activity Login"))
+    bot.send_message(message.chat.id, dashboard_text, reply_markup=markup) 
+        
 # Debug messages to check what the bot is receiving
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
