@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Retrieve variables
-Bot_API_TOKEN = os.getenv("BOT_API_TOKEN")
+Bot_API_TOKEN = os.getenv("Bot_API_TOKEN")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 bot = TeleBot(Bot_API_TOKEN)

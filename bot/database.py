@@ -33,7 +33,7 @@ def initialize_db():
                         passcode TEXT NOT NULL,
                         country TEXT NOT NULL,
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    );
+                        );
                     """
                 )
                 connection.commit()
