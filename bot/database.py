@@ -94,3 +94,41 @@ def fetch_user_by_email(email):
         if connection:
             connection.close()
     print(f"Query result: {user_data}")
+    
+# Function to update user post
+def update_user_posts(username):
+    query = """
+    UPDATE users
+    SET total_posts = total_posts + 1
+    WHERE username = %s
+    RETURNING total_posts;
+    """
+    try:
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, (username,))
+                result = cur.fetchone()
+                conn.commit()
+                return result[0] if result else None
+    except Exception as e:
+        print(f"Error updating posts for {username}: {e}")
+        return None
+    
+# Function to update leaderboard
+def update_leaderboard():
+    query = """
+    SELECT username, total_posts
+    FROM users
+    ORDER BY total_posts DESC, join_date ASC
+    LIMIT 100;
+    """
+    leaderboard = []
+    try:
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                leaderboard = cur.fetchall()  # List of tuples: [(username1, posts1), (username2, posts2), ...]
+        return leaderboard
+    except Exception as e:
+        print(f"Error updating leaderboard: {e}")
+        return []
