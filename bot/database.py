@@ -65,30 +65,32 @@ def add_user(email, hashed_passcode, telegram_username, country):
 # Function to fecth users        
 def fetch_user_by_email(email):
     try:
-        connection = psycopg2.connect(DATABASE_URL)
-        cursor = connection.cursor()
-        query = "SELECT * FROM users WHERE email = %s"
-        cursor.execute(query, (email,))
-        user_data = cursor.fetchone()
-        if user_data:
-            # Map database fields to the dictionary
-            user = {
-                "id": user_data["id"],
-                "email": user_data["email"],
-                "passcode": user_data["passcode"],
-                "telegram_username": user_data["telegram_username"],
-                "country": user_data["country"],
-                "created_at": user_data["created_at"],
-                "title": user_data.get["title", "New User"], # Default title if not set
-                "leaderboard_position": user_data.get["leaderboard_position", "000th"], # Default leaderboard position if not set
-                "total_submissions": user_data.get["total_submissions", 0], # Default total submissions if not set
-            }
-            return user
-        else:
-            return None # No user found
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:  # Use RealDictCursor
+                query = "SELECT * FROM users WHERE email = %s"
+                cursor.execute(query, (email,))
+                user_data = cursor.fetchone()
+                if user_data:
+                    # Map database fields to the dictionary
+                    user = {
+                        "id": user_data["id"],
+                        "email": user_data["email"],
+                        "passcode": user_data["passcode"],
+                        "telegram_username": user_data["telegram_username"],
+                        "country": user_data["country"],
+                        "created_at": user_data["created_at"],
+                        "title": user_data.get("title", "New User"),  # Default value if title is NULL
+                        "leaderboard_position": user_data.get("leaderboard_position", "000th"),  # Default value if NULL
+                        "total_submissions": user_data.get("total_submissions", 0),  # Default value if NULL
+                    }
+                    return user
+                else:
+                    return None  # No user found
     except Exception as e:
         print(f"Error fetching user by email: {e}")
+        return None
     finally:
         if connection:
-            cursor.close()
             connection.close()
+    print(f"Query result: {user_data}")
