@@ -62,7 +62,7 @@ def add_user(email, hashed_passcode, telegram_username, country):
     finally:
         conn.close()
 
-# Function to fecth users        
+# Function to fetch users        
 def fetch_user_by_email(email):
     try:
         connection = get_db_connection()
@@ -94,6 +94,38 @@ def fetch_user_by_email(email):
         if connection:
             connection.close()
     print(f"Query result: {user_data}")
+    
+# Function to fetch user by username
+def fetch_user_by_username(username):
+    try:
+        connection = get_db_connection()
+        if connection:
+            with connection.cursor(cursor_factory=RealDictCursor) as cursor:  # Use RealDictCursor
+                query = "SELECT * FROM users WHERE telegram_username = %s"
+                cursor.execute(query, (username,))
+                user_data = cursor.fetchone()
+                if user_data:
+                    # Map database fields to the dictionary
+                    user = {
+                        "id": user_data[" id"],
+                        "email": user_data["email"],
+                        "passcode": user_data["passcode"],
+                        "telegram_username": user_data["telegram_username"],
+                        "country": user_data["country"],
+                        "created_at": user_data["created_at"],
+                        "title": user_data.get("title", "New User"),  # Default value if title is NULL
+                        "leaderboard_position": user_data.get("leaderboard_position", "000th"),  # Default value if NULL
+                        "total_submissions": user_data.get("total_submissions", 0),  # Default value if NULL
+                    }
+                    return user
+                else:
+                    return None  # No user found
+    except Exception as e:
+        print(f"Error fetching user by username: {e}")
+        return None
+    finally:
+        if connection:
+            connection.close()
     
 # Function to update user post
 def update_user_posts(username):
