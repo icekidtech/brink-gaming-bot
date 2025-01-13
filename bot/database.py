@@ -2,6 +2,7 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+from bot.config import DATABASE_URL
 
 # Loading environment variables from .env file
 load_dotenv()
@@ -60,3 +61,34 @@ def add_user(email, hashed_passcode, telegram_username, country):
         print(f"Error adding user: {e}")
     finally:
         conn.close()
+
+# Function to fecth users        
+def fetch_user_by_email(email):
+    try:
+        connection = psycopg2.connect(DATABASE_URL)
+        cursor = connection.cursor()
+        query = "SELECT * FROM users WHERE email = %s"
+        cursor.execute(query, (email,))
+        user_data = cursor.fetchone()
+        if user_data:
+            # Map database fields to the dictionary
+            user = {
+                "id": user_data["id"],
+                "email": user_data["email"],
+                "passcode": user_data["passcode"],
+                "telegram_username": user_data["telegram_username"],
+                "country": user_data["country"],
+                "created_at": user_data["created_at"],
+                "title": user_data.get["title", "New User"], # Default title if not set
+                "leaderboard_position": user_data.get["leaderboard_position", "000th"], # Default leaderboard position if not set
+                "total_submissions": user_data.get["total_submissions", 0], # Default total submissions if not set
+            }
+            return user
+        else:
+            return None # No user found
+    except Exception as e:
+        print(f"Error fetching user by email: {e}")
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
