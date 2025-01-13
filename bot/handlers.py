@@ -25,7 +25,7 @@ def sign_up(message):
     if existing_user:
         bot.send_message(message.chat.id, "You already have an account. Please login instead.")
         return
-    bot.send_message(message.chat,id, "Please enter your email address:")
+    bot.send_message(message.chat,id, "Please enter your email address:", parse_mode="Markdown")
     bot.register_next_step_handler(message, collect_email)
     
 # Function to collect email
@@ -53,11 +53,11 @@ def confirm_passcode(message, email, passcode):
     bot.delete_message(message.chat.id, message.message_id)
     if confirm == passcode:
             username = message.from_user.username
-            join_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             region = message.from_user.language_code
-            add_user(username, email, passcode, join_date)
+            add_user(username, email, passcode, created_at)
             bot.send_message(message.chat.id, "Account created successfully! 🎉")
-            show_dashboard(message, username, email, join_date, region)
+            show_dashboard(message, username, email, created_at, region)
     else:
         bot.send_message(message.chat.id, "Passcodes do not match. Please start again by selecting 'Sign Up'.")
 
@@ -97,7 +97,7 @@ def verify_passcode(message, email):
     user = fetch_user_by_email(email)
     if user and user['passcode'] == passcode:
         bot.send_message(message.chat.id, "Login successful! Redirecting to your dashboard...")
-        show_dashboard(message, user['username'], user['email'], user['join_date', user['region']])
+        show_dashboard(message, user['telegram_username'], user['email'], user['created_at'], user['country'])
     else:
         bot.send_message(message.chat.id, "Incorrect passcode. Please try again.")
         
@@ -125,26 +125,28 @@ def record_activity(message):
 
 
 # Function to show dashboard        
-def show_dashboard(message, username, email, join_date, region):
-    user = fetch_user_by_username
+def show_dashboard(message, username, email, created_at, region):
+    user = fetch_user_by_username(username)  # Ensure this fetches the correct user
     if user:
         total_posts = user.get('total_posts', 0)
         leaderboard_position = user.get('leaderboard_position', '000th')
         dashboard_text = (
             f"Welcome back, @{username}! 🎖️\n\n"
+            f"📧 Email: {email}\n"
             f"📊 Current Status:\n"
             f"♟️ Leaderboard position: {leaderboard_position}\n"
             f"#⃣ Total post submissions: {total_posts}\n"
             f"🗺️ Region of activity: {region or 'Unknown'}\n"
-            f"📅 Joined on: {join_date}\n\n"
+            f"📅 Joined on: {created_at}\n\n"
             f"Partake in the Contributors Pool and elevate your title on the platform! 👾"
         )
         markup = ReplyKeyboardMarkup(resize_keyboard=True)
         markup.add(
-        KeyboardButton("Join Pool"), 
-        KeyboardButton("Submit Activity Login")
+            KeyboardButton("Join Pool"), 
+            KeyboardButton("Submit Activity Login")
         )
         bot.send_message(message.chat.id, dashboard_text, reply_markup=markup)
+
         
         
 # Function to show leaderboard

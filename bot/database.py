@@ -107,7 +107,7 @@ def fetch_user_by_username(username):
                 if user_data:
                     # Map database fields to the dictionary
                     user = {
-                        "id": user_data[" id"],
+                        "id": user_data["id"],
                         "email": user_data["email"],
                         "passcode": user_data["passcode"],
                         "telegram_username": user_data["telegram_username"],
