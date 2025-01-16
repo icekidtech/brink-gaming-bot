@@ -2,7 +2,6 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
-from bot.config import DATABASE_URL
 
 # Loading environment variables from .env file
 load_dotenv()
@@ -18,7 +17,7 @@ def get_db_connection():
     except Exception as e:
         print(f"Error connecting to database: {e}")
         return None
-    
+
 # Function to initialize the database (create tables if they don't exist)
 def initialize_db():
     connection = get_db_connection()
@@ -29,12 +28,14 @@ def initialize_db():
                     """
                     CREATE TABLE IF NOT EXISTS users (
                         id SERIAL PRIMARY KEY,
-                        telegram_username TEXT NOT NULL,
+                        telegram_username TEXT UNIQUE NOT NULL,
                         email VARCHAR(255) UNIQUE NOT NULL,
-                        passcode TEXT NOT NULL,
                         country TEXT NOT NULL,
-                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-                        );
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        total_tasks INT NOT NULL DEFAULT 0,
+                        referrals INT NOT NULL DEFAULT 0,
+                        referral_link TEXT NOT NULL
+                    );
                     """
                 )
                 connection.commit()
@@ -43,124 +44,113 @@ def initialize_db():
             print(f"Error initializing database: {e}")
         finally:
             connection.close()
-                       
-initialize_db()           
-            
-def add_user(email, hashed_passcode, telegram_username, country):
+
+initialize_db()
+
+# Function to add a new user
+def add_user(email, telegram_username, country, referral_link):
     query = """
-    INSERT INTO users (email, passcode, telegram_username, country)
+    INSERT INTO users (email, telegram_username, country, referral_link)
     VALUES (%s, %s, %s, %s)
-    ON CONFLICT (email) DO NOTHING;
+    ON CONFLICT (email, telegram_username) DO NOTHING;
     """
     try:
-        conn = get_db_connection()
-        with conn.cursor() as cur:
-            cur.execute(query, (email, hashed_passcode, telegram_username, country))
-        conn.commit()
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(query, (email, telegram_username, country, referral_link))
+        connection.commit()
     except Exception as e:
         print(f"Error adding user: {e}")
     finally:
-        conn.close()
+        if connection:
+            connection.close()
 
-# Function to fetch users        
+# Function to fetch a user by email
 def fetch_user_by_email(email):
+    query = "SELECT * FROM users WHERE email = %s;"
     try:
         connection = get_db_connection()
-        if connection:
-            with connection.cursor(cursor_factory=RealDictCursor) as cursor:  # Use RealDictCursor
-                query = "SELECT * FROM users WHERE email = %s"
-                cursor.execute(query, (email,))
-                user_data = cursor.fetchone()
-                if user_data:
-                    # Map database fields to the dictionary
-                    user = {
-                        "id": user_data["id"],
-                        "email": user_data["email"],
-                        "passcode": user_data["passcode"],
-                        "telegram_username": user_data["telegram_username"],
-                        "country": user_data["country"],
-                        "created_at": user_data["created_at"],
-                        "title": user_data.get("title", "New User"),  # Default value if title is NULL
-                        "leaderboard_position": user_data.get("leaderboard_position", "000th"),  # Default value if NULL
-                        "total_submissions": user_data.get("total_submissions", 0),  # Default value if NULL
-                    }
-                    return user
-                else:
-                    return None  # No user found
+        with connection.cursor() as cursor:
+            cursor.execute(query, (email,))
+            return cursor.fetchone()
     except Exception as e:
         print(f"Error fetching user by email: {e}")
         return None
     finally:
         if connection:
             connection.close()
-    print(f"Query result: {user_data}")
-    
-# Function to fetch user by username
+
+# Function to fetch a user by username
 def fetch_user_by_username(username):
+    query = "SELECT * FROM users WHERE telegram_username = %s;"
     try:
         connection = get_db_connection()
-        if connection:
-            with connection.cursor(cursor_factory=RealDictCursor) as cursor:  # Use RealDictCursor
-                query = "SELECT * FROM users WHERE telegram_username = %s"
-                cursor.execute(query, (username,))
-                user_data = cursor.fetchone()
-                if user_data:
-                    # Map database fields to the dictionary
-                    user = {
-                        "id": user_data["id"],
-                        "email": user_data["email"],
-                        "passcode": user_data["passcode"],
-                        "telegram_username": user_data["telegram_username"],
-                        "country": user_data["country"],
-                        "created_at": user_data["created_at"],
-                        "title": user_data.get("title", "New User"),  # Default value if title is NULL
-                        "leaderboard_position": user_data.get("leaderboard_position", "000th"),  # Default value if NULL
-                        "total_submissions": user_data.get("total_submissions", 0),  # Default value if NULL
-                    }
-                    return user
-                else:
-                    return None  # No user found
+        with connection.cursor() as cursor:
+            cursor.execute(query, (username,))
+            return cursor.fetchone()
     except Exception as e:
         print(f"Error fetching user by username: {e}")
         return None
     finally:
         if connection:
             connection.close()
-    
-# Function to update user post
-def update_user_posts(username):
+
+# Function to update the total tasks completed by a user
+def update_user_tasks(username):
     query = """
     UPDATE users
-    SET total_posts = total_posts + 1
-    WHERE username = %s
-    RETURNING total_posts;
+    SET total_tasks = total_tasks + 1
+    WHERE telegram_username = %s
+    RETURNING total_tasks;
     """
     try:
-        with psycopg2.connect(DATABASE_URL) as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, (username,))
-                result = cur.fetchone()
-                conn.commit()
-                return result[0] if result else None
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(query, (username,))
+            result = cursor.fetchone()
+            connection.commit()
+            return result['total_tasks'] if result else None
     except Exception as e:
-        print(f"Error updating posts for {username}: {e}")
+        print(f"Error updating tasks for {username}: {e}")
         return None
-    
-# Function to update leaderboard
-def update_leaderboard():
+    finally:
+        if connection:
+            connection.close()
+
+# Function to update referrals for a user
+def update_user_referrals(referrer_username):
     query = """
-    SELECT username, total_posts
-    FROM users
-    ORDER BY total_posts DESC, join_date ASC
-    LIMIT 100;
+    UPDATE users
+    SET referrals = referrals + 1
+    WHERE telegram_username = %s
+    RETURNING referrals;
     """
-    leaderboard = []
     try:
-        with psycopg2.connect(DATABASE_URL) as conn:
-            with conn.cursor() as cur:
-                cur.execute(query)
-                leaderboard = cur.fetchall()  # List of tuples: [(username1, posts1), (username2, posts2), ...]
-        return leaderboard
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(query, (referrer_username,))
+            result = cursor.fetchone()
+            connection.commit()
+            return result['referrals'] if result else None
     except Exception as e:
-        print(f"Error updating leaderboard: {e}")
-        return []
+        print(f"Error updating referrals for {referrer_username}: {e}")
+        return None
+    finally:
+        if connection:
+            connection.close()
+
+# Function to get the total number of users
+def get_total_users():
+    query = "SELECT COUNT(*) AS total_users FROM users;"
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            result = cursor.fetchone()
+            return result['total_users'] if result else 0
+    except Exception as e:
+        print(f"Error fetching total users: {e}")
+        return 0
+    finally:
+        if connection:
+            connection.close()
