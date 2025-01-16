@@ -48,16 +48,16 @@ def initialize_db():
 initialize_db()
 
 # Function to add a new user
-def add_user(email, telegram_username, country, referral_link):
+def add_user(email, telegram_username, country, referral_link, join_date):
     query = """
-    INSERT INTO users (email, telegram_username, country, referral_link)
-    VALUES (%s, %s, %s, %s)
+    INSERT INTO users (email, telegram_username, country, referral_link, created_at)
+    VALUES (%s, %s, %s, %s, %s)
     ON CONFLICT (email, telegram_username) DO NOTHING;
     """
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute(query, (email, telegram_username, country, referral_link))
+            cursor.execute(query, (email, telegram_username, country, referral_link, join_date))
         connection.commit()
     except Exception as e:
         print(f"Error adding user: {e}")

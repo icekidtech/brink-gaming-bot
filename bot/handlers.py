@@ -1,8 +1,10 @@
+from email import message
+import email
 import os
 from datetime import datetime
 from telebot import TeleBot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
-from bot.database import save_user, fetch_user_by_email, fetch_user_by_username, update_user_referrals, get_total_users, update_user_tasks
+from bot.database import add_user, fetch_user_by_email, fetch_user_by_username, update_user_referrals, get_total_users, update_user_tasks
 
 # Initialize bot with token
 API_TOKEN = os.getenv("Bot_API_TOKEN")
@@ -12,19 +14,25 @@ bot = TeleBot(API_TOKEN)
 COMMUNITY_LINK = "https://t.me/your_community_link"  # Replace with your community link
 
 # Start the bot and handle commands
-def start_bot():
-    # Handle the /start command
-    @bot.message_handler(commands=['start'])
-    def send_welcome(message):
-        username = message.from_user.username
-        welcome_text = f"Welcome, @{username or 'User'}! 🎉\nChoose an option to continue:"
-        markup = ReplyKeyboardMarkup(resize_keyboard=True)
-        markup.add(
-            KeyboardButton("Sign Up"), 
-            KeyboardButton("Join Community"), 
-            KeyboardButton("Login")
-        )
-        bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    username = message.from_user.username
+    welcome_text = f"Welcome, @{username or 'User '}! 🎉\nChoose an option to continue:"
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(
+        KeyboardButton("Sign Up"), 
+        KeyboardButton("Join Community"), 
+        KeyboardButton("Login")
+    )
+    bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
+
+    # Handle referral logic
+    if len(message.text.split()) > 1:
+        referrer_username = message.text.split()[1]
+        referrer = fetch_user_by_username(referrer_username)
+        if referrer:
+            update_user_referrals(referrer_username)
+            bot.send_message(message.chat.id, f"You were referred by @{referrer_username}. Thank you for joining!")
 
     # Handle the "Sign Up" process
     @bot.message_handler(func=lambda msg: msg.text == "Sign Up")
@@ -53,8 +61,8 @@ def start_bot():
         username = message.from_user.username
         join_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         referral_link = f"https://t.me/{bot.get_me().username}?start={username}"
-        save_user(username, email, country, join_date, referral_link)
-        bot.send_message(message.chat.id, "Account created successfully! 🎉")
+        add_user(email, username, country, referral_link, join_date)  # Corrected parameter order
+        bot.send_message(message.chat.id, "Account created successfully! ")
         show_dashboard(message, username)
 
     # Handle the "Login" process
@@ -81,7 +89,7 @@ def start_bot():
             total_users = get_total_users()
             total_tasks = user.get('total_tasks', 0)
             referrals = user.get('referrals', 0)
-            join_date = user['join_date']
+            join_date = user['created_at']
             dashboard_text = (
                 f"Welcome back, @{username}! 🎖️\n\n"
                 f"📊 Current Status:\n"
@@ -116,13 +124,3 @@ def start_bot():
             bot.send_message(message.chat.id, "Task submitted successfully!")
         else:
             bot.send_message(message.chat.id, "No account found. Please sign up first.")
-
-    # Handle referrals during /start
-    @bot.message_handler(commands=['start'])
-    def handle_referral(message):
-        if len(message.text.split()) > 1:
-            referrer_username = message.text.split()[1]
-            referrer = fetch_user_by_username(referrer_username)
-            if referrer:
-                update_user_referrals(referrer_username)
-                bot.send_message(message.chat.id, f"You were referred by @{referrer_username}. Thank you for joining!")
