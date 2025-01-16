@@ -34,7 +34,7 @@ def initialize_db():
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         total_tasks INT NOT NULL DEFAULT 0,
                         referrals INT NOT NULL DEFAULT 0,
-                        referral_link TEXT NOT NULL
+                        referral_link TEXT NOT NULL DEFAULT ''
                     );
                     """
                 )
@@ -151,6 +151,21 @@ def get_total_users():
     except Exception as e:
         print(f"Error fetching total users: {e}")
         return 0
+    finally:
+        if connection:
+            connection.close()
+
+# Function to clear users from the database            
+def clear_users():
+    query = "DELETE FROM users;"
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+        connection.commit()
+        print("Users cleared successfully.")
+    except Exception as e:
+        print(f"Error clearing users: {e}")
     finally:
         if connection:
             connection.close()
