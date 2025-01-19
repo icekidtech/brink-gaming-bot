@@ -34,14 +34,9 @@ def initialize_db():
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         total_tasks INT NOT NULL DEFAULT 0,
                         referrals INT NOT NULL DEFAULT 0,
-                        referral_link TEXT NOT NULL DEFAULT ''
+                        referral_link TEXT NOT NULL DEFAULT '',
+                        CONSTRAINT unique_user UNIQUE (email, telegram_username)
                     );
-                    """
-                )
-                cursor.execute(
-                    """
-                    ALTER TABLE users
-                    ADD CONTRAINT unique_user UNIQUE (email, telegram_username);
                     """
                 )
                 connection.commit()
