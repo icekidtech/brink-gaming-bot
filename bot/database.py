@@ -34,8 +34,7 @@ def initialize_db():
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         total_tasks INT NOT NULL DEFAULT 0,
                         referrals INT NOT NULL DEFAULT 0,
-                        referral_link TEXT NOT NULL DEFAULT '',
-                        CONSTRAINT unique_user UNIQUE (email, telegram_username)
+                        referral_link TEXT NOT NULL DEFAULT ''
                     );
                     """
                 )
