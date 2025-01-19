@@ -28,14 +28,20 @@ def initialize_db():
                     """
                     CREATE TABLE IF NOT EXISTS users (
                         id SERIAL PRIMARY KEY,
-                        telegram_username TEXT UNIQUE NOT NULL,
-                        email VARCHAR(255) UNIQUE NOT NULL,
+                        telegram_username TEXT NOT NULL,
+                        email VARCHAR(255) NOT NULL,
                         country TEXT NOT NULL,
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         total_tasks INT NOT NULL DEFAULT 0,
                         referrals INT NOT NULL DEFAULT 0,
                         referral_link TEXT NOT NULL DEFAULT ''
                     );
+                    """
+                )
+                cursor.execute(
+                    """
+                    ALTER TABLE users
+                    ADD CONTRAINT unique_user UNIQUE (email, telegram_username);
                     """
                 )
                 connection.commit()
