@@ -51,8 +51,7 @@ initialize_db()
 def add_user(email, telegram_username, country, referral_link, join_date):
     query = """
     INSERT INTO users (email, telegram_username, country, referral_link, created_at)
-    VALUES (%s, %s, %s, %s, %s)
-    ON CONFLICT (email, telegram_username) DO NOTHING;
+    VALUES (%s, %s, %s, %s, %s);
     """
     try:
         connection = get_db_connection()
