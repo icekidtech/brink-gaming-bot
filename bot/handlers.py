@@ -132,32 +132,32 @@ def send_welcome(message):
         else:
             bot.send_message(message.chat.id, "No account found. Please sign up first.")
             
-            # Handle the 'View Dashboard' button click
-            @bot.message_handler(func=lambda msg: msg.text == "View Dashboard")
-            def view_dashboard(message):
-                username = message.from_user.username
-                user = fetch_user_by_username(username)
-                if user:
-                    total_users = get_total_users()
-                    total_tasks = user.get('total_tasks', 0)
-                    referrals = user.get('referrals', 0)
-                    join_date = user['created_at']
-                    dashboard_text = (
-                        f"Welcome back, @{username}! 🎖️\n\n"
-                        f"📊 Current Status:\n"
-                        f"📧 Email: {user['email']}\n"
-                        f"🗺️ Country: {user['country']}\n"
-                        f"#⃣ Number of completed tasks: {total_tasks}\n"
-                        f"🔗 Number of referrals: {referrals}\n"
-                        f"📅 Joined on: {join_date}\n"
-                        f"👥 Total users on bot: {total_users}\n\n"
-                        f"Share your referral link to invite others: {user['referral_link']}\n"
-                    )
-                    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-                    markup.add(
-                        KeyboardButton("Summit Task"),
-                        KeyboardButton("View Refferal Stats")
-                    )
-                    bot.send_message(message.chat.id, dashboard_text, reply_markup=markup)
-                else:
-                    bot.send_message(message.chat.id, "No account found. Please sign up first.")
+# Handle the 'View dashboard' button click
+@bot.message_handler(func=lambda msg: msg.text == "View dashboard")
+def view_dashboard(message):
+    username = message.from_user.username
+    user = fetch_user_by_username(username)
+    if user:
+        total_users = get_total_users()
+        total_tasks = user.get('total_tasks', 0)
+        referrals = user.get('referrals', 0)
+        join_date = user['created_at']
+        dashboard_text = (
+            f"Welcome back, @{username}! 🎖️\n\n"
+            f"📊 Current Status:\n"
+            f"📧 Email: {user['email']}\n"
+            f"🗺️ Country: {user['country']}\n"
+            f"#⃣ Number of completed tasks: {total_tasks}\n"
+            f"🔗 Number of referrals: {referrals}\n"
+            f"📅 Joined on: {join_date}\n"
+            f"👥 Total users on bot: {total_users}\n\n"
+            f"Share your referral link to invite others: {user['referral_link']}\n"
+            )
+        markup = ReplyKeyboardMarkup(resize_keyboard=True)
+        markup.add(
+            KeyboardButton("Summit Task"),
+            KeyboardButton("View Refferal Stats")
+            )
+        bot.send_message(message.chat.id, dashboard_text, reply_markup=markup)
+    else:
+        bot.send_message(message.chat.id, "No account found. Please sign up first.")
