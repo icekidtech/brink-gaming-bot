@@ -66,9 +66,15 @@ def send_welcome(message):
         username = message.from_user.username
         join_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         referral_link = f"https://t.me/{bot.get_me().username}?start={username}"
-        add_user(email, username, country, referral_link, join_date)  # Corrected parameter order
-        bot.send_message(message.chat.id, "Account created successfully! ")
-        show_dashboard(message, username)
+        if referrer_username and referrer_username == username:
+            bot.send_message(message.chat.id, "You can't use your own referral link.")
+        else:
+            if username is None:
+                bot.send_message(message.chat.id, "Please seta Telegram username.")
+            else:
+                add_user(email, username, country, referral_link, join_date)  # Corrected parameter order
+            bot.send_message(message.chat.id, "Account created successfully! ")
+            show_dashboard(message, username)
 
     # Handle the "Login" process
     @bot.message_handler(func=lambda msg: msg.text == "Login")
