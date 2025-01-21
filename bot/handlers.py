@@ -31,8 +31,13 @@ def send_welcome(message):
         referrer_username = message.text.split()[1]
         referrer = fetch_user_by_username(referrer_username)
         if referrer:
-            update_user_referrals(referrer_username)
-            bot.send_message(message.chat.id, f"You were referred by @{referrer_username}. Thank you for joining!")
+            if referrer_username == username:
+                bot.send_message(message.chat.id, "you can't use your own referral link 😅")
+            else:
+                update_user_referrals(referrer_username)
+                bot.send_message(message.chat.id, f"You were referred by @{referrer_username}. Thank you for joining!")
+        else:
+            bot.send_message(message.chat.id, "Invalid referral link. Please try again!")
 
     # Handle the "Sign Up" process
     @bot.message_handler(func=lambda msg: msg.text == "Sign Up")
