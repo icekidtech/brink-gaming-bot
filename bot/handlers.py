@@ -129,6 +129,8 @@ def send_welcome(message):
                 KeyboardButton("View dashboard")
             )
             bot.send_message(message.chat.id, "Click 'View dashboard' to see your updated stats", reply_markup=markup)
+        else:
+            bot.send_message(message.chat.id, "No account found. Please sign up first.")
             
             # Handle the 'View Dashboard' button click
             @bot.message_handler(func=lambda msg: msg.text == "View Dashboard")
@@ -141,14 +143,14 @@ def send_welcome(message):
                     referrals = user.get('referrals', 0)
                     join_date = user['created_at']
                     dashboard_text = (
-                        f"Welcome back, @{username}! 🎖️ \n\n"
-                        f" Current status:\n"
-                        f" Email: {user['email']}\n"
-                        f" Country: {user['country']}\n"
-                        f"# Number of completed tasks: {total_tasks}\n"
-                        f" Number of referrals: {referrals}\n"
-                        f" Joined on: {join_date}\n"
-                        f" Total users on bot: {total_users}\n\n"
+                        f"Welcome back, @{username}! 🎖️\n\n"
+                        f"📊 Current Status:\n"
+                        f"📧 Email: {user['email']}\n"
+                        f"🗺️ Country: {user['country']}\n"
+                        f"#⃣ Number of completed tasks: {total_tasks}\n"
+                        f"🔗 Number of referrals: {referrals}\n"
+                        f"📅 Joined on: {join_date}\n"
+                        f"👥 Total users on bot: {total_users}\n\n"
                         f"Share your referral link to invite others: {user['referral_link']}\n"
                     )
                     markup = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -157,6 +159,5 @@ def send_welcome(message):
                         KeyboardButton("View Refferal Stats")
                     )
                     bot.send_message(message.chat.id, dashboard_text, reply_markup=markup)
-            
-        else:
-            bot.send_message(message.chat.id, "No account found. Please sign up first.")
+                else:
+                    bot.send_message(message.chat.id, "No account found. Please sign up first.")
